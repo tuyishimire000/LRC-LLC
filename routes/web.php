@@ -12,7 +12,7 @@ Route::middleware('guest')->group(function () {
 });
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'role:super_admin,property_manager'])->group(function () {
     Route::resource('tenants', TenantController::class)->only(['index', 'create', 'store', 'show']);
     Route::get('/leases', [LeaseController::class, 'index'])->name('leases.index');
     Route::get('/leases/create', [LeaseController::class, 'create'])->name('leases.create');
