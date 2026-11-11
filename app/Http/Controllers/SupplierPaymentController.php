@@ -49,9 +49,13 @@ class SupplierPaymentController extends Controller
             'paid_on' => ['required', 'date', 'before_or_equal:today'],
             'allocations' => ['required', 'array', 'min:1'],
             'allocations.*.property_expense_id' => ['required', 'integer', 'distinct', 'exists:property_expenses,id'],
-            'allocations.*.amount' => ['required', 'numeric', 'gt:0', 'decimal:0,2'],
+            'allocations.*.amount' => ['nullable', 'numeric', 'gte:0', 'decimal:0,2'],
         ]);
 
+        $data['allocations'] = array_values(array_filter($data['allocations'], fn ($item) => isset($item['amount']) && (float) $item['amount'] > 0));
+        if ($data['allocations'] === []) {
+            throw ValidationException::withMessages(['allocations' => 'Enter an amount against at least one approved expense.']);
+        }
         $totalCents = array_sum(array_map(fn ($item) => (int) round((float) $item['amount'] * 100), $data['allocations']));
         if ($totalCents !== (int) round((float) $data['amount'] * 100)) {
             throw ValidationException::withMessages(['allocations' => 'Expense allocations must equal the supplier payment amount.']);
