@@ -5,6 +5,7 @@ use App\Http\Controllers\LeaseController;
 use App\Http\Controllers\RentBillingController;
 use App\Http\Controllers\OwnerPayoutController;
 use App\Http\Controllers\PropertyExpenseController;
+use App\Http\Controllers\FinancialReportController;
 use App\Http\Controllers\TenantController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,4 +49,8 @@ Route::middleware(['auth', 'role:super_admin,finance_manager'])->group(function 
 Route::middleware(['auth', 'role:super_admin'])->group(function () {
     Route::post('/accounting/expenses/{expense}/approve', [PropertyExpenseController::class, 'approve'])->name('accounting.expenses.approve');
     Route::post('/accounting/payouts/{payout}/approve', [OwnerPayoutController::class, 'approve'])->name('accounting.payouts.approve');
+});
+
+Route::middleware(['auth', 'role:super_admin,finance_manager'])->group(function () {
+    Route::get('/accounting/reports', [FinancialReportController::class, 'index'])->name('accounting.reports.index');
 });
