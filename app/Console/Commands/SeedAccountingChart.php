@@ -19,6 +19,8 @@ class SeedAccountingChart extends Command
             ['2100', 'Tenant security deposits payable', 'liability', 'credit', true],
             ['3000', 'Opening balance / retained earnings', 'equity', 'credit', false],
             ['4000', 'Property management fee income', 'income', 'credit', false],
+            ['4100', 'LRC-owned rental income', 'income', 'credit', false],
+            ['2200', 'Vendor payables', 'liability', 'credit', false],
             ['5000', 'Owner-borne property expenses', 'expense', 'debit', false],
             ['5100', 'LRC operating expenses', 'expense', 'debit', false],
         ];
