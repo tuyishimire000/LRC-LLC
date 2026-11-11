@@ -41,12 +41,12 @@ class RentBillingService
                             ->sortByDesc('effective_from')
                             ->first();
                         $monthlyRent = $term ? $term->monthly_rent : $lease->monthly_rent;
-                        $amountCents += (int) round(((float) $monthlyRent * 100) / $day->daysInMonth);
+                        $amountCents += ((float) $monthlyRent * 100) / $day->daysInMonth;
                     }
                     if ($amountCents <= 0) continue;
 
                     $dueDay = min((int) $lease->rent_due_day, $monthStart->daysInMonth);
-                    $dueDate = $monthStart->setDay($dueDay);
+                    $dueDate = $monthStart->setDay($dueDay);\n                    if ($dueDate->lt($periodStart)) $dueDate = $periodStart;
                     $exists = RentCharge::query()->where('lease_id', $lease->id)->whereDate('billing_period', $monthStart)->exists();
                     if ($exists) continue;
 
