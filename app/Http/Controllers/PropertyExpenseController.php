@@ -50,7 +50,8 @@ class PropertyExpenseController extends Controller
 
     public function approve(Request $request, PropertyExpense $expense): RedirectResponse
     {
-        DB::transaction(function () use ($request, $expense) {
+        $approvalData = $request->validate(['approval_note' => ['nullable', 'string', 'max:2000']]);
+        DB::transaction(function () use ($request, $expense, $approvalData) {
             $locked = PropertyExpense::query()->whereKey($expense->id)->lockForUpdate()->firstOrFail();
             if ($locked->status !== 'pending') {
                 throw ValidationException::withMessages(['expense' => 'Only pending expenses can be approved.']);
@@ -62,7 +63,7 @@ class PropertyExpenseController extends Controller
                 'status' => 'approved',
                 'approved_by' => $request->user()->id,
                 'approved_at' => now(),
-                'approval_note' => $request->input('approval_note'),
+                'approval_note' => $approvalData['approval_note'] ?? null,
             ]);
         });
 
