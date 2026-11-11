@@ -130,7 +130,8 @@ class RentPaymentVerificationTest extends TestCase
         app(RentPaymentVerificationService::class)->verify(
             $fixture['payment'],
             [['rent_charge_id' => $fixture['charge']->id, 'amount' => '40000.00']],
-            $fixture['recorder']
+            $fixture['recorder'],
+            app(FinancialEventPostingService::class)
         );
     }
 
@@ -144,7 +145,8 @@ class RentPaymentVerificationTest extends TestCase
         app(RentPaymentVerificationService::class)->verify(
             $fixture['payment'],
             [['rent_charge_id' => $fixture['charge']->id, 'amount' => '120000.00']],
-            $fixture['verifier']
+            $fixture['verifier'],
+            app(FinancialEventPostingService::class)
         );
     }
 }
