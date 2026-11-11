@@ -19,7 +19,8 @@ A web-based property management platform for Rwanda. The platform supports LRC-o
 4. Run `composer install`.
 5. Run `php artisan key:generate`.
 6. Run `php artisan migrate`.
-7. Run `php artisan lrc:admin-create\nphp artisan lrc:finance-user` to provision the first administrator interactively. Use a strong password (12+ characters).
+7. Run `php artisan lrc:admin-create
+php artisan lrc:finance-user` to provision the first administrator interactively. Use a strong password (12+ characters).
 8. Run `php artisan serve`.
 
 For automated checks, run `php artisan test`. The GitHub Actions workflow runs Composer validation and the test suite on pushes and pull requests.
@@ -70,7 +71,8 @@ The repository has not yet been installed and executed in a PHP environment in t
 - A unique lease/month key prevents duplicate rent charges. The command is `php artisan lrc:rent-generate --month=YYYY-MM`.
 - A Kigali-timezone scheduler entry runs the generator on the first day of each month at 00:15.
 - Payments are recorded as pending; they do not reduce tenant balances until a staff member verifies the receipt and allocates the full amount to the tenant's rent charges.
-- Payment allocation is transactional, locks affected rows, checks tenant ownership/currency/outstanding amounts, and requires allocations to equal the verified payment.\n- Payment recorders cannot verify their own payments; a second finance manager must perform the verification.
+- Payment allocation is transactional, locks affected rows, checks tenant ownership/currency/outstanding amounts, and requires allocations to equal the verified payment.
+- Payment recorders cannot verify their own payments; a second finance manager must perform the verification.
 - Charge balances are derived from allocation totals; no manually editable outstanding balance field is stored.
 
 This is an initial internal staff workflow, not a payment-provider integration or a full accounting ledger. Refunds, reversals, credits, late-fee policy and bank reconciliation are not implemented. Validate the business rules and automated tests before using live financial records.
