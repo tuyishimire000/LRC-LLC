@@ -147,8 +147,20 @@ class FinancialEventPostingService
             if ($existing = $this->existing('owner_payout_transfer', $payout->id)) return $existing;
             $amount = $this->cents($payout->net_amount);
             if ($amount <= 0) return null;
+            $ownerPayable = $this->account('2000');
+            $available = DB::table('journal_lines')
+                ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
+                ->where('journal_entries.status', 'posted')
+                ->where('journal_lines.ledger_account_id', $ownerPayable->id)
+                ->where('journal_lines.property_id', $payout->property_id)
+                ->where('journal_lines.owner_id', $payout->owner_id)
+                ->selectRaw('COALESCE(SUM(journal_lines.credit), 0) - COALESCE(SUM(journal_lines.debit), 0) as balance')
+                ->value('balance');
+            if ($this->cents($available ?? 0) < $amount) {
+                throw ValidationException::withMessages(['payout' => 'The owner sub-ledger balance is insufficient for this payout. Reconcile collections, approved expenses, fees and previous transfers before recording it.']);
+            }
             $lines = [
-                $this->line($this->account('2000'), $amount, 0, $payout->property_id, $payout->owner_id, 'Owner payout settles owner funds payable'),
+                $this->line($ownerPayable, $amount, 0, $payout->property_id, $payout->owner_id, 'Owner payout settles owner funds payable'),
                 $this->line($this->account('1000'), 0, $amount, $payout->property_id, null, 'Owner payout from bank/payment clearing'),
             ];
             return $this->post('owner_payout_transfer', $payout->id, $payout->period_end, 'Owner payout '.$payout->payout_number, $lines, $payout->approved_by, $payout->paid_by);
