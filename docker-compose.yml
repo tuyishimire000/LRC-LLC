@@ -7,10 +7,12 @@ services:
       MYSQL_DATABASE: ${DB_DATABASE:-lrc_real_estate}
       MYSQL_USER: ${DB_USERNAME:-lrc_app}
       MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in your .env file}
+      LRC_TEST_DATABASE: ${LRC_TEST_DATABASE:-lrc_testing}
     ports:
       - "${DB_PORT:-3306}:3306"
     volumes:
       - lrc_mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD:-local-root-change-me}"]
       interval: 10s
