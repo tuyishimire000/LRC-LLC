@@ -32,3 +32,18 @@ Route::middleware(['auth', 'role:super_admin,finance_manager'])->group(function 
     Route::get('/billing/payments/{payment}/verify', [RentBillingController::class, 'showVerificationForm'])->name('billing.payment.verify.form');
     Route::post('/billing/payments/{payment}/verify', [RentBillingController::class, 'verify'])->name('billing.payment.verify');
 });
+
+Route::middleware(['auth', 'role:super_admin,finance_manager'])->group(function () {
+    Route::get('/accounting/expenses', [PropertyExpenseController::class, 'index'])->name('accounting.expenses.index');
+    Route::get('/accounting/expenses/create', [PropertyExpenseController::class, 'create'])->name('accounting.expenses.create');
+    Route::post('/accounting/expenses', [PropertyExpenseController::class, 'store'])->name('accounting.expenses.store');
+    Route::get('/accounting/payouts', [OwnerPayoutController::class, 'index'])->name('accounting.payouts.index');
+    Route::get('/accounting/payouts/create', [OwnerPayoutController::class, 'create'])->name('accounting.payouts.create');
+    Route::post('/accounting/payouts', [OwnerPayoutController::class, 'store'])->name('accounting.payouts.store');
+    Route::post('/accounting/payouts/{payout}/transfer', [OwnerPayoutController::class, 'recordTransfer'])->name('accounting.payouts.transfer');
+});
+
+Route::middleware(['auth', 'role:super_admin'])->group(function () {
+    Route::post('/accounting/expenses/{expense}/approve', [PropertyExpenseController::class, 'approve'])->name('accounting.expenses.approve');
+    Route::post('/accounting/payouts/{payout}/approve', [OwnerPayoutController::class, 'approve'])->name('accounting.payouts.approve');
+});
