@@ -10,6 +10,7 @@ use App\Models\Property;
 use App\Models\PropertyExpense;
 use App\Models\PropertyOwner;
 use App\Models\RentPayment;
+use App\Models\SupplierPayment;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
@@ -120,6 +121,39 @@ class FinancialEventPostingService
             }
             $lines[] = $this->line($this->account('2200'), 0, $amount, $expense->property_id, null, 'Expense supplier payable');
             return $this->post('property_expense', $expense->id, $expense->incurred_on, 'Approved expense '.$expense->expense_number, $lines, $expense->recorded_by, $expense->approved_by);
+        });
+    }
+
+    public function postVerifiedSupplierPayment(SupplierPayment $payment): ?JournalEntry
+    {
+        return DB::transaction(function () use ($payment) {
+            $payment = SupplierPayment::query()->whereKey($payment->id)->lockForUpdate()
+                ->with('allocations.expense.property')->firstOrFail();
+            if ($payment->status !== 'verified') {
+                throw ValidationException::withMessages(['payment' => 'Only verified supplier payments can be posted.']);
+            }
+            if ($existing = $this->existing('supplier_payment', $payment->id)) return $existing;
+
+            $groups = $payment->allocations->groupBy(fn ($allocation) => $allocation->expense->property_id);
+            if ($groups->isEmpty()) throw ValidationException::withMessages(['allocations' => 'Supplier payment has no approved expense allocations.']);
+            $totalCents = $payment->allocations->sum(fn ($allocation) => $this->cents($allocation->amount));
+            if ($totalCents !== $this->cents($payment->amount)) {
+                throw ValidationException::withMessages(['payment' => 'Supplier payment allocations do not equal the verified payment amount.']);
+            }
+
+            $lines = [];
+            foreach ($groups as $propertyId => $allocations) {
+                $amount = $allocations->sum(fn ($allocation) => $this->cents($allocation->amount));
+                foreach ($allocations as $allocation) {
+                    if ($allocation->expense->status !== 'approved' || $allocation->expense->currency !== $payment->currency) {
+                        throw ValidationException::withMessages(['allocations' => 'Only approved expenses in the payment currency can be settled.']);
+                    }
+                }
+                $lines[] = $this->line($this->account('2200'), $amount, 0, (int) $propertyId, null, 'Settlement of approved supplier expenses');
+            }
+            $lines[] = $this->line($this->account('1000'), 0, $totalCents, null, null, 'Verified supplier payment from bank/payment clearing');
+
+            return $this->post('supplier_payment', $payment->id, $payment->paid_on, 'Supplier payment '.$payment->payment_number, $lines, $payment->recorded_by, $payment->verified_by);
         });
     }
 
