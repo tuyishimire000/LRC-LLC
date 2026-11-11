@@ -68,7 +68,7 @@ class RentBillingController extends Controller
         ]);
 
         $allocations = array_values(array_filter($data['allocations'], fn ($item) => isset($item['amount']) && (float) $item['amount'] > 0));
-        $verification->verify($payment, $allocations, $request->user(), $data['verification_note'] ?? null);
+        $verification->verify($payment, $allocations, $request->user(), app(\\App\\Services\\Accounting\\FinancialEventPostingService::class), $data['verification_note'] ?? null);
         return redirect()->route('billing.index')->with('success', 'Payment verified and allocated. Outstanding balances have been recalculated.');
     }
 }
