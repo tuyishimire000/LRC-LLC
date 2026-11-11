@@ -14,7 +14,7 @@ class RentPaymentVerificationService
     {
         DB::transaction(function () use ($payment, $allocations, $verifier, $note) {
             $lockedPayment = RentPayment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
-            if ($lockedPayment->status !== 'pending') {
+            if ((int) $lockedPayment->recorded_by === (int) $verifier->id) {\n                throw ValidationException::withMessages(['payment' => 'The person who recorded a payment cannot verify it. A second authorized staff member must check receipt.']);\n            }\n            if ($lockedPayment->status !== 'pending') {
                 throw ValidationException::withMessages(['payment' => 'Only pending payments can be verified.']);
             }
 
