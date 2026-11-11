@@ -48,10 +48,10 @@ class PropertyExpenseController extends Controller
         return redirect()->route('accounting.expenses.index')->with('success', 'Expense recorded as pending. It will not be deducted from an owner statement until independently approved.');
     }
 
-    public function approve(Request $request, PropertyExpense $expense): RedirectResponse
+    public function approve(Request $request, PropertyExpense $expense, FinancialEventPostingService $posting): RedirectResponse
     {
         $approvalData = $request->validate(['approval_note' => ['nullable', 'string', 'max:2000']]);
-        DB::transaction(function () use ($request, $expense, $approvalData) {
+        DB::transaction(function () use ($request, $expense, $approvalData, $posting) {
             $locked = PropertyExpense::query()->whereKey($expense->id)->lockForUpdate()->firstOrFail();
             if ($locked->status !== 'pending') {
                 throw ValidationException::withMessages(['expense' => 'Only pending expenses can be approved.']);
