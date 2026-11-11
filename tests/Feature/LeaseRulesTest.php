@@ -2,7 +2,7 @@
 namespace Tests\Feature;
 use App\Models\Lease;
 use App\Models\Property;
-use App\Models\PropertyUnit;
+use App\Models\PropertyUnit;\nuse App\Models\Tenant;
 use App\Services\Leasing\LeaseRules;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
