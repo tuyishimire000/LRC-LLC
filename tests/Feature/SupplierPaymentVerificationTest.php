@@ -77,7 +77,7 @@ class SupplierPaymentVerificationTest extends TestCase
         $service = app(SupplierPaymentVerificationService::class);
         $posting = app(FinancialEventPostingService::class);
         $service->verify($payment, $verifier, $posting);
-        $service->verify($payment->fresh(), $verifier, $posting);
+        $posting->postVerifiedSupplierPayment($payment->fresh());
 
         $this->assertSame('verified', $payment->fresh()->status);
         $this->assertDatabaseHas('journal_entries', [
@@ -85,7 +85,7 @@ class SupplierPaymentVerificationTest extends TestCase
             'source_id' => $payment->id,
             'status' => 'posted',
         ]);
-        $this->assertDatabaseCount('journal_entries', 2);
+        $this->assertDatabaseCount('journal_entries', 1);
         $this->assertSame(30000.0, (float) \Illuminate\Support\Facades\DB::table('journal_lines')
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
             ->where('journal_entries.source_type', 'supplier_payment')
