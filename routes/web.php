@@ -7,10 +7,12 @@ use App\Http\Controllers\TenantController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => view('welcome'))->name('home');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:5,1')->name('login.store');
 });
+
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
 
 Route::middleware(['auth', 'role:super_admin,property_manager'])->group(function () {
@@ -21,6 +23,9 @@ Route::middleware(['auth', 'role:super_admin,property_manager'])->group(function
     Route::get('/leases/{lease}', [LeaseController::class, 'show'])->name('leases.show');
     Route::post('/leases/{lease}/approve', [LeaseController::class, 'approve'])->name('leases.approve');
     Route::post('/leases/{lease}/terminate', [LeaseController::class, 'terminate'])->name('leases.terminate');
+});
+
+Route::middleware(['auth', 'role:super_admin,finance_manager'])->group(function () {
     Route::get('/billing', [RentBillingController::class, 'index'])->name('billing.index');
     Route::get('/billing/payments/create', [RentBillingController::class, 'createPayment'])->name('billing.payment.create');
     Route::post('/billing/payments', [RentBillingController::class, 'storePayment'])->name('billing.payment.store');
