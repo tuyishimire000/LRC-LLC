@@ -64,17 +64,34 @@ class FinancialReportController extends Controller
         $expenses = round((float) $profitLoss->where('account_type', 'expense')->sum('balance'), 2);
         $netProfit = round($income - $expenses, 2);
 
+        $cumulativeProfitLoss = (clone $base)
+            ->whereDate('journal_entries.entry_date', '<=', $end)
+            ->whereIn('ledger_accounts.account_type', ['income', 'expense'])
+            ->select(
+                'ledger_accounts.account_type',
+                DB::raw('SUM(journal_lines.debit) as total_debit'),
+                DB::raw('SUM(journal_lines.credit) as total_credit')
+            )
+            ->groupBy('ledger_accounts.account_type')
+            ->get();
+        $accumulatedIncome = (float) ($cumulativeProfitLoss->firstWhere('account_type', 'income')->total_credit ?? 0)
+            - (float) ($cumulativeProfitLoss->firstWhere('account_type', 'income')->total_debit ?? 0);
+        $accumulatedExpenses = (float) ($cumulativeProfitLoss->firstWhere('account_type', 'expense')->total_debit ?? 0)
+            - (float) ($cumulativeProfitLoss->firstWhere('account_type', 'expense')->total_credit ?? 0);
+        $accumulatedEarnings = round($accumulatedIncome - $accumulatedExpenses, 2);
+
         $balanceSheet = $trialBalance->filter(fn ($row) => in_array($row->account_type, ['asset', 'liability', 'equity']))
             ->values();
         $assets = round((float) $balanceSheet->where('account_type', 'asset')->sum(fn ($row) => $row->balance), 2);
         $liabilities = round((float) $balanceSheet->where('account_type', 'liability')->sum(fn ($row) => -$row->balance), 2);
         $equity = round((float) $balanceSheet->where('account_type', 'equity')->sum(fn ($row) => -$row->balance), 2);
-        $balanceCheck = round($assets - ($liabilities + $equity + $netProfit), 2);
+        $equityIncludingEarnings = round($equity + $accumulatedEarnings, 2);
+        $balanceCheck = round($assets - ($liabilities + $equityIncludingEarnings), 2);
 
         return view('accounting.reports.index', compact(
             'start', 'end', 'trialBalance', 'profitLoss', 'income',
             'expenses', 'netProfit', 'balanceSheet', 'assets',
-            'liabilities', 'equity', 'balanceCheck'
+            'liabilities', 'equity', 'accumulatedEarnings', 'equityIncludingEarnings', 'balanceCheck'
         ));
     }
 }
