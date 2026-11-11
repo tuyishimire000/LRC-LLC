@@ -138,12 +138,22 @@ class OwnerPayoutPreparationService
                 ]);
 
                 if ($payout->wasRecentlyCreated) {
-                    if ($ownerGross > 0) {
+                    $remainingCollectionCents = $ownerGross;
+                    $allocationRows = $collections->values();
+                    $lastCollectionIndex = $allocationRows->count() - 1;
+                    foreach ($allocationRows as $allocationIndex => $allocation) {
+                        $lineCents = $allocationIndex === $lastCollectionIndex
+                            ? $remainingCollectionCents
+                            : (int) round((int) round((float) $allocation->amount * 100) * $percentage / 100);
+                        $lineCents = max(0, min($remainingCollectionCents, $lineCents));
+                        $remainingCollectionCents -= $lineCents;
+                        if ($lineCents <= 0) continue;
                         OwnerPayoutItem::create([
                             'owner_payout_id' => $payout->id,
                             'item_type' => 'rent_collection',
-                            'description' => 'Verified rent collections, ownership share '.$percentage.'%',
-                            'amount' => number_format($ownerGross / 100, 2, '.', ''),
+                            'source_id' => $allocation->id,
+                            'description' => 'Verified payment '.$allocation->payment->payment_number.' allocated to charge '.$allocation->charge->charge_number,
+                            'amount' => number_format($lineCents / 100, 2, '.', ''),
                         ]);
                     }
                     if ($ownerFee > 0) {
@@ -154,12 +164,22 @@ class OwnerPayoutPreparationService
                             'amount' => number_format(-$ownerFee / 100, 2, '.', ''),
                         ]);
                     }
-                    if ($ownerExpenses > 0) {
+                    $remainingExpenseCents = $ownerExpenses;
+                    $expenseRows = $expenses->values();
+                    $lastExpenseIndex = $expenseRows->count() - 1;
+                    foreach ($expenseRows as $expenseIndex => $expense) {
+                        $lineCents = $expenseIndex === $lastExpenseIndex
+                            ? $remainingExpenseCents
+                            : (int) round((int) round((float) $expense->amount * 100) * $percentage / 100);
+                        $lineCents = max(0, min($remainingExpenseCents, $lineCents));
+                        $remainingExpenseCents -= $lineCents;
+                        if ($lineCents <= 0) continue;
                         OwnerPayoutItem::create([
                             'owner_payout_id' => $payout->id,
                             'item_type' => 'owner_expense',
-                            'description' => 'Approved owner-borne property expenses allocated by ownership share',
-                            'amount' => number_format(-$ownerExpenses / 100, 2, '.', ''),
+                            'source_id' => $expense->id,
+                            'description' => 'Approved expense '.$expense->expense_number.': '.$expense->description,
+                            'amount' => number_format(-$lineCents / 100, 2, '.', ''),
                         ]);
                     }
                 }
