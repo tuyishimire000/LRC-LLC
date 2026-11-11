@@ -21,7 +21,7 @@ A web-based property management platform for Rwanda. The platform supports LRC-o
 6. Run `php artisan migrate`.
 7. Run `php artisan lrc:admin-create` to provision the first administrator interactively. Use a strong password (12+ characters).
 8. Run `php artisan lrc:finance-user` to create a finance manager account. Create at least two authorized staff accounts so the payment recorder and verifier can be different people.
-9. Run `php artisan serve`.
+9. Run `php artisan lrc:accounting-seed` to create the provisional starter chart of accounts. Have your accountant approve account mappings before posting live transactions.\n10. Run `php artisan serve`.
 
 
 For automated checks, run `php artisan test`. The GitHub Actions workflow runs Composer validation and the test suite on pushes and pull requests.
@@ -60,7 +60,7 @@ The existing PHP application and `realestate.sql` are retained as legacy referen
 - Partial payments automatically reduce charge balances through allocations; balances are derived, not manually edited.
 - Billing routes are restricted to super administrators and finance managers.
 
-Not implemented yet: tenant self-service portal, document upload UI, tenant credits/overpayments/refunds, double-entry general ledger, owner statements and payouts, payment-provider webhooks, bank/MoMo reconciliation and production deployment. These remain future milestones.
+Not implemented yet: tenant self-service portal, document upload UI, tenant credits/overpayments/refunds, automatic journal postings from business events, payment-provider webhooks, bank/MoMo reconciliation and production deployment. These remain future milestones.
 
 The repository has not yet been installed and executed in a PHP environment in this development session. Treat the branch as pending CI and migration validation, not production-ready.
 
@@ -76,4 +76,18 @@ The repository has not yet been installed and executed in a PHP environment in t
 - Payment recorders cannot verify their own payments; a second finance manager must perform the verification.
 - Charge balances are derived from allocation totals; no manually editable outstanding balance field is stored.
 
-This is an initial internal staff workflow, not a payment-provider integration or a full accounting ledger. Refunds, reversals, credits, late-fee policy and bank reconciliation are not implemented. Validate the business rules and automated tests before using live financial records.
+This is an initial internal staff workflow, not a payment-provider integration. Refunds, reversals, credits, late-fee policy and bank reconciliation are not implemented. Validate the business rules and automated tests before using live financial records.
+
+
+## Accounting and owner statement milestone (in progress)
+
+- Added ledger account, journal entry and journal line tables with a service that rejects unbalanced entries and requires a different user to post a draft journal.
+- Added a provisional starter chart command: `php artisan lrc:accounting-seed`. Account codes and mappings must be reviewed by LRC's accountant before live posting.
+- Added property expense entry and approval. Only approved expenses marked owner-borne are considered for owner statements; the person recording an expense cannot approve it.
+- Added owner statement preparation for client-managed properties. It requires a management agreement covering the full period and effective ownership records totalling exactly 100%.
+- Draft statements use verified payment allocations, the agreement's percentage/fixed management fee and approved owner-borne RWF expenses. Ownership share rounding is reconciled to the cent and each collection/expense line links to its source record.
+- Prevents overlapping statement periods for an owner/property and prevents duplicate statement creation for the same owner/property/period.
+- Payout workflow is draft → approved → paid, with separate preparer, approver and transfer recorder. Recording a transfer stores the bank/provider reference only; it does not initiate a transfer.
+- Payout preparation blocks negative net statements; no expense carry-forward policy is implemented.
+
+The accounting journal service is a generic foundation only. Rent payments, expenses and payouts are not yet automatically posted to the general ledger. Owner payout calculations are not a substitute for safeguarding client funds or reconciling bank balances. Do not use these workflows for live client funds until the ledger mappings, payout policy, migration/tests and Rwanda legal/banking/payment-provider requirements have been reviewed and validated.
