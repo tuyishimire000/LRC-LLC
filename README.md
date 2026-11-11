@@ -19,7 +19,7 @@ A web-based property management platform for Rwanda. The platform supports LRC-o
 4. Run `composer install`.
 5. Run `php artisan key:generate`.
 6. Run `php artisan migrate`.
-7. Run `php artisan serve`.
+7. Run `php artisan lrc:admin-create` to provision the first administrator interactively. Use a strong password (12+ characters).\n8. Run `php artisan serve`.\n\nFor automated checks, run `php artisan test`. The GitHub Actions workflow runs Composer validation and the test suite on pushes and pull requests.
 
 Do not use the MySQL root account from the application. Never commit `.env` or provider credentials.
 
