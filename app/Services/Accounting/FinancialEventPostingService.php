@@ -129,6 +129,17 @@ class FinancialEventPostingService
             $payout = OwnerPayout::query()->whereKey($payout->id)->lockForUpdate()->firstOrFail();
             if ($payout->status !== 'approved') throw ValidationException::withMessages(['payout' => 'Only approved statements can accrue fees.']);
             if ($existing = $this->existing('owner_payout_fee', $payout->id)) return $existing;
+            $agreements = ManagementAgreement::query()->where('property_id', $payout->property_id)
+                ->where('status', 'active')
+                ->whereDate('starts_on', '<=', $payout->period_start->toDateString())
+                ->where(fn ($q) => $q->whereNull('ends_on')->orWhereDate('ends_on', '>=', $payout->period_end->toDateString()))
+                ->lockForUpdate()->get();
+            if ($agreements->count() !== 1) {
+                throw ValidationException::withMessages(['agreement' => 'Exactly one active management agreement must cover this complete owner statement period.']);
+            }
+            // Percentage fees were already recognized when each rent payment was posted.
+            // Only fixed fees are accrued at statement approval.
+            if ($agreements->first()->fee_type !== 'fixed') return null;
             $amount = $this->cents($payout->management_fee);
             if ($amount <= 0) return null;
             $lines = [
