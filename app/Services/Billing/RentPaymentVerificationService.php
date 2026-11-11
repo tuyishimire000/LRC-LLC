@@ -10,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 
 class RentPaymentVerificationService
 {
-    public function verify(RentPayment $payment, array $allocations, User $verifier, ?string $note = null): void
+    public function verify(RentPayment $payment, array $allocations, User $verifier, FinancialEventPostingService $posting, ?string $note = null): void
     {
         DB::transaction(function () use ($payment, $allocations, $verifier, $note) {
             $lockedPayment = RentPayment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
