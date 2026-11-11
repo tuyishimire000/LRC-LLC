@@ -5,6 +5,7 @@ namespace App\Services\Billing;
 use App\Models\RentCharge;
 use App\Models\RentPayment;
 use App\Models\User;
+use App\Services\Accounting\FinancialEventPostingService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -12,7 +13,7 @@ class RentPaymentVerificationService
 {
     public function verify(RentPayment $payment, array $allocations, User $verifier, FinancialEventPostingService $posting, ?string $note = null): void
     {
-        DB::transaction(function () use ($payment, $allocations, $verifier, $note) {
+        DB::transaction(function () use ($payment, $allocations, $verifier, $posting, $note) {
             $lockedPayment = RentPayment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
 
             if ((int) $lockedPayment->recorded_by === (int) $verifier->id) {
@@ -71,6 +72,8 @@ class RentPaymentVerificationService
                 'verified_at' => now(),
                 'verification_note' => $note,
             ]);
+
+            $posting->postVerifiedRentPayment($lockedPayment->fresh());
         });
     }
 }
