@@ -21,7 +21,8 @@ A web-based property management platform for Rwanda. The platform supports LRC-o
 6. Run `php artisan migrate`.
 7. Run `php artisan lrc:admin-create` to provision the first administrator interactively. Use a strong password (12+ characters).
 8. Run `php artisan lrc:finance-user` to create a finance manager account. Create at least two authorized staff accounts so the payment recorder and verifier can be different people.
-9. Run `php artisan lrc:accounting-seed` to create the provisional starter chart of accounts. Have your accountant approve account mappings before posting live transactions.\n10. Run `php artisan serve`.
+9. Run `php artisan lrc:accounting-seed` to create the provisional starter chart of accounts. Have your accountant approve account mappings before posting live transactions.
+10. Run `php artisan serve`.
 
 
 For automated checks, run `php artisan test`. The GitHub Actions workflow runs Composer validation and the test suite on pushes and pull requests.
