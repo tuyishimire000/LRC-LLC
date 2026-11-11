@@ -13,6 +13,11 @@ class Owner extends Model
 
     protected $fillable = ['owner_code', 'owner_type', 'legal_name', 'email', 'phone', 'national_id_encrypted', 'tax_identifier', 'address', 'status'];
 
+    protected function casts(): array
+    {
+        return ['national_id_encrypted' => 'encrypted'];
+    }
+
     public function properties(): BelongsToMany
     {
         return $this->belongsToMany(Property::class, 'property_owners')
