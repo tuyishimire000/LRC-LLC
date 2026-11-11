@@ -44,19 +44,19 @@ class OwnerPayoutController extends Controller
         return redirect()->route('accounting.payouts.index')->with('success', count($payouts).' draft owner statement(s) prepared. No transfers were initiated.');
     }
 
-    public function approve(Request $request, OwnerPayout $payout, OwnerPayoutLifecycleService $lifecycle): RedirectResponse
+    public function approve(Request $request, OwnerPayout $payout, OwnerPayoutLifecycleService $lifecycle, FinancialEventPostingService $posting): RedirectResponse
     {
-        $lifecycle->approve($payout, $request->user(), $request->validate([
+        $lifecycle->approve($payout, $request->user(), $posting, $request->validate([
             'approval_note' => ['nullable', 'string', 'max:2000'],
         ])['approval_note'] ?? null);
 
         return redirect()->route('accounting.payouts.index')->with('success', 'Owner payout approved. A different finance operator must record the actual transfer.');
     }
 
-    public function recordTransfer(Request $request, OwnerPayout $payout, OwnerPayoutLifecycleService $lifecycle): RedirectResponse
+    public function recordTransfer(Request $request, OwnerPayout $payout, OwnerPayoutLifecycleService $lifecycle, FinancialEventPostingService $posting): RedirectResponse
     {
         $data = $request->validate(['payout_reference' => ['required', 'string', 'max:120']]);
-        $lifecycle->recordTransfer($payout, $request->user(), $data['payout_reference']);
+        $lifecycle->recordTransfer($payout, $request->user(), $posting, $data['payout_reference']);
 
         return redirect()->route('accounting.payouts.index')->with('success', 'Transfer reference recorded. Reconcile it against the bank/provider statement.');
     }
