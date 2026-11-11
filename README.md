@@ -57,3 +57,16 @@ The existing PHP application and `realestate.sql` are retained as legacy referen
 Not implemented yet: tenant self-service portal, document upload UI, recurring rent billing, payment verification, double-entry ledger, owner payouts, provider integrations and production deployment. These remain future milestones.
 
 The repository has not yet been installed and executed in a PHP environment in this development session. Treat the branch as pending CI and migration validation, not production-ready.
+
+
+## Rent billing module (in progress)
+
+- Monthly rent charges are generated from approved and active leases using the effective-dated lease rent terms.
+- Partial-month charges are prorated by calendar days; monthly amounts are stored in RWF with two decimal places.
+- A unique lease/month key prevents duplicate rent charges. The command is `php artisan lrc:rent-generate --month=YYYY-MM`.
+- A Kigali-timezone scheduler entry runs the generator on the first day of each month at 00:15.
+- Payments are recorded as pending; they do not reduce tenant balances until a staff member verifies the receipt and allocates the full amount to the tenant's rent charges.
+- Payment allocation is transactional, locks affected rows, checks tenant ownership/currency/outstanding amounts, and requires allocations to equal the verified payment.
+- Charge balances are derived from allocation totals; no manually editable outstanding balance field is stored.
+
+This is an initial internal staff workflow, not a payment-provider integration or a full accounting ledger. Refunds, reversals, credits, late-fee policy and bank reconciliation are not implemented. Validate the business rules and automated tests before using live financial records.
