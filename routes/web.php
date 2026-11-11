@@ -6,6 +6,7 @@ use App\Http\Controllers\RentBillingController;
 use App\Http\Controllers\OwnerPayoutController;
 use App\Http\Controllers\PropertyExpenseController;
 use App\Http\Controllers\FinancialReportController;
+use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\TenantController;
 use Illuminate\Support\Facades\Route;
 
@@ -53,4 +54,8 @@ Route::middleware(['auth', 'role:super_admin'])->group(function () {
 
 Route::middleware(['auth', 'role:super_admin,finance_manager'])->group(function () {
     Route::get('/accounting/reports', [FinancialReportController::class, 'index'])->name('accounting.reports.index');
+    Route::get('/accounting/supplier-payments', [SupplierPaymentController::class, 'index'])->name('accounting.supplier-payments.index');
+    Route::get('/accounting/supplier-payments/create', [SupplierPaymentController::class, 'create'])->name('accounting.supplier-payments.create');
+    Route::post('/accounting/supplier-payments', [SupplierPaymentController::class, 'store'])->name('accounting.supplier-payments.store');
+    Route::post('/accounting/supplier-payments/{payment}/verify', [SupplierPaymentController::class, 'verify'])->name('accounting.supplier-payments.verify');
 });
