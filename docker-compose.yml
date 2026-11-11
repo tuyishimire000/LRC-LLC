@@ -1,0 +1,21 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-local-root-change-me}
+      MYSQL_DATABASE: ${DB_DATABASE:-lrc_real_estate}
+      MYSQL_USER: ${DB_USERNAME:-lrc_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in your .env file}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - lrc_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD:-local-root-change-me}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  lrc_mysql_data:
