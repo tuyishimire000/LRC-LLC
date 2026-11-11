@@ -121,13 +121,19 @@ class OwnerPayoutPreparationService
                     ]);
                 }
 
-                $payout = OwnerPayout::query()->firstOrCreate([
-                    'owner_id' => $record->owner_id,
-                    'property_id' => $property->id,
-                    'period_start' => $start->toDateString(),
-                    'period_end' => $end->toDateString(),
-                ], [
-                    'payout_number' => 'OP-'.Str::upper(Str::random(12)),
+                $payout = OwnerPayout::query()
+                    ->where('owner_id', $record->owner_id)
+                    ->where('property_id', $property->id)
+                    ->whereDate('period_start', $start->toDateString())
+                    ->whereDate('period_end', $end->toDateString())
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($payout && $payout->status !== 'draft') {
+                    throw ValidationException::withMessages(['payout' => 'This statement has already been approved or paid and cannot be recalculated. Use a formal adjustment workflow.']);
+                }
+
+                $values = [
                     'gross_collected' => number_format($ownerGross / 100, 2, '.', ''),
                     'management_fee' => number_format($ownerFee / 100, 2, '.', ''),
                     'owner_expenses' => number_format($ownerExpenses / 100, 2, '.', ''),
@@ -135,9 +141,23 @@ class OwnerPayoutPreparationService
                     'currency' => 'RWF',
                     'status' => 'draft',
                     'prepared_by' => $userId,
-                ]);
+                ];
 
-                if ($payout->wasRecentlyCreated) {
+                if (!$payout) {
+                    $payout = OwnerPayout::query()->create([
+                        'payout_number' => 'OP-'.Str::upper(Str::random(12)),
+                        'owner_id' => $record->owner_id,
+                        'property_id' => $property->id,
+                        'period_start' => $start->toDateString(),
+                        'period_end' => $end->toDateString(),
+                        ...$values,
+                    ]);
+                } else {
+                    $payout->update($values);
+                    $payout->items()->delete();
+                }
+
+                {
                     $remainingCollectionCents = $ownerGross;
                     $allocationRows = $collections->values();
                     $lastCollectionIndex = $allocationRows->count() - 1;
