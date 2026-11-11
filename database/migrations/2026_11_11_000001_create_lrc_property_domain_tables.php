@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('legal_name');
             $table->string('email')->nullable()->index();
             $table->string('phone', 30)->nullable()->index();
-            $table->string('national_id_encrypted')->nullable();
+            $table->text('national_id_encrypted')->nullable();
             $table->string('tax_identifier')->nullable();
             $table->text('address')->nullable();
             $table->string('status', 20)->default('active')->index();
