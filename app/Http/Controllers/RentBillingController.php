@@ -6,6 +6,7 @@ use App\Models\RentCharge;
 use App\Models\RentPayment;
 use App\Models\Tenant;
 use App\Services\Billing\RentPaymentVerificationService;
+use App\Services\Accounting\FinancialEventPostingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -58,7 +59,7 @@ class RentBillingController extends Controller
         return view('billing.payment-verify', compact('payment', 'charges'));
     }
 
-    public function verify(Request $request, RentPayment $payment, RentPaymentVerificationService $verification): RedirectResponse
+    public function verify(Request $request, RentPayment $payment, RentPaymentVerificationService $verification, FinancialEventPostingService $posting): RedirectResponse
     {
         $data = $request->validate([
             'allocations' => ['required', 'array', 'min:1'],
@@ -68,7 +69,7 @@ class RentBillingController extends Controller
         ]);
 
         $allocations = array_values(array_filter($data['allocations'], fn ($item) => isset($item['amount']) && (float) $item['amount'] > 0));
-        $verification->verify($payment, $allocations, $request->user(), app(\\App\\Services\\Accounting\\FinancialEventPostingService::class), $data['verification_note'] ?? null);
+        $verification->verify($payment, $allocations, $request->user(), $posting, $data['verification_note'] ?? null);
         return redirect()->route('billing.index')->with('success', 'Payment verified and allocated. Outstanding balances have been recalculated.');
     }
 }
