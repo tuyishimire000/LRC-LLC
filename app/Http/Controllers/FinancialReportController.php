@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -74,10 +73,14 @@ class FinancialReportController extends Controller
             )
             ->groupBy('ledger_accounts.account_type')
             ->get();
-        $accumulatedIncome = (float) ($cumulativeProfitLoss->firstWhere('account_type', 'income')->total_credit ?? 0)
-            - (float) ($cumulativeProfitLoss->firstWhere('account_type', 'income')->total_debit ?? 0);
-        $accumulatedExpenses = (float) ($cumulativeProfitLoss->firstWhere('account_type', 'expense')->total_debit ?? 0)
-            - (float) ($cumulativeProfitLoss->firstWhere('account_type', 'expense')->total_credit ?? 0);
+        $incomeTotals = $cumulativeProfitLoss->firstWhere('account_type', 'income');
+        $expenseTotals = $cumulativeProfitLoss->firstWhere('account_type', 'expense');
+        $accumulatedIncome = $incomeTotals
+            ? (float) $incomeTotals->total_credit - (float) $incomeTotals->total_debit
+            : 0.0;
+        $accumulatedExpenses = $expenseTotals
+            ? (float) $expenseTotals->total_debit - (float) $expenseTotals->total_credit
+            : 0.0;
         $accumulatedEarnings = round($accumulatedIncome - $accumulatedExpenses, 2);
 
         $balanceSheet = $trialBalance->filter(fn ($row) => in_array($row->account_type, ['asset', 'liability', 'equity']))
