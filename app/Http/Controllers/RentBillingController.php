@@ -53,7 +53,7 @@ class RentBillingController extends Controller
     public function showVerificationForm(RentPayment $payment): View
     {
         abort_unless($payment->status === 'pending', 422, 'Only pending payments can be verified.');
-        $charges = RentCharge::query()->with('allocations')->whereHas('lease', fn ($query) => $query->where('tenant_id', $payment->tenant_id))->where('currency', $payment->currency)->where('due_on', '<=', now()->toDateString())->orderBy('due_on')->get()->filter(fn ($charge) => (float) $charge->outstanding_amount > 0);
+        $charges = RentCharge::query()->with('allocations')->whereHas('lease', fn ($query) => $query->where('tenant_id', $payment->tenant_id))->where('currency', $payment->currency)->orderBy('due_on')->get()->filter(fn ($charge) => (float) $charge->outstanding_amount > 0);
         $payment->load('tenant');
         return view('billing.payment-verify', compact('payment', 'charges'));
     }
