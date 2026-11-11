@@ -87,7 +87,7 @@ This is an initial internal staff workflow, not a payment-provider integration. 
 - Added property expense entry and approval. Only approved expenses marked owner-borne are considered for owner statements; the person recording an expense cannot approve it.
 - Added owner statement preparation for client-managed properties. It requires a management agreement covering the full period and effective ownership records totalling exactly 100%.
 - Draft statements use verified payment allocations, the agreement's percentage/fixed management fee and approved owner-borne RWF expenses. Ownership share rounding is reconciled to the cent and each collection/expense line links to its source record.
-- Prevents overlapping statement periods for an owner/property and prevents duplicate statement creation for the same owner/property/period.
+- Prevents overlapping statement periods for an owner/property; an existing draft can be recalculated after new verified collections or approved expenses, while approved/paid statements are locked against recalculation.
 - Payout workflow is draft → approved → paid, with separate preparer, approver and transfer recorder. Recording a transfer stores the bank/provider reference only; it does not initiate a transfer.
 - Payout preparation blocks negative net statements; no expense carry-forward policy is implemented.
 
