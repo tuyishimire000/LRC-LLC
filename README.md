@@ -61,7 +61,7 @@ The existing PHP application and `realestate.sql` are retained as legacy referen
 - Partial payments automatically reduce charge balances through allocations; balances are derived, not manually edited.
 - Billing routes are restricted to super administrators and finance managers.
 
-Not implemented yet: tenant self-service portal, document upload UI, tenant credits/overpayments/refunds, automatic journal postings from business events, payment-provider webhooks, bank/MoMo reconciliation and production deployment. These remain future milestones.
+Not implemented yet: tenant self-service portal, document upload UI, tenant credits/overpayments/refunds, payment-provider webhooks, bank/MoMo reconciliation, supplier payment settlement and production deployment. These remain future milestones.
 
 The repository has not yet been installed and executed in a PHP environment in this development session. Treat the branch as pending CI and migration validation, not production-ready.
 
@@ -91,4 +91,18 @@ This is an initial internal staff workflow, not a payment-provider integration. 
 - Payout workflow is draft → approved → paid, with separate preparer, approver and transfer recorder. Recording a transfer stores the bank/provider reference only; it does not initiate a transfer.
 - Payout preparation blocks negative net statements; no expense carry-forward policy is implemented.
 
-The accounting journal service is a generic foundation only. Rent payments, expenses and payouts are not yet automatically posted to the general ledger. Owner payout calculations are not a substitute for safeguarding client funds or reconciling bank balances. Do not use these workflows for live client funds until the ledger mappings, payout policy, migration/tests and Rwanda legal/banking/payment-provider requirements have been reviewed and validated.
+Verified rent payments, approved expenses and owner payout fee/transfer events now create balanced double-entry journals inside the same database transaction as their business status changes. Source references prevent duplicate postings. The reports page provides a trial balance, period income statement and balance sheet with accumulated earnings. These are management reports only: supplier payable settlement, opening balances, depreciation, tax, year-end closing, reversals/refunds and bank reconciliation are not implemented. The starter chart remains provisional and must be approved by LRC's accountant. Do not use these workflows for live client funds until the ledger mappings, payout policy, migration/tests and Rwanda legal/banking/payment-provider requirements have been reviewed and validated.
+
+
+### Ledger posting and financial reports (in progress)
+
+- A verified tenant payment posts a debit to bank/payment clearing and credits either LRC rental income or client-owner funds payable plus contractual percentage management fee income.
+- An approved expense posts a debit to owner funds payable when it is an owner-borne client-property expense, or to LRC property expense when LRC bears it; the offset is vendor payable.
+- Approval of a fixed-fee owner statement accrues the fixed management fee by debiting owner funds payable and crediting management fee income.
+- Recording an actual payout reference as paid debits owner funds payable and credits bank/payment clearing.
+- Business status changes and their journal postings run in the same database transaction. A failure to create/post the journal rolls back the business action.
+- Each event has a unique source type/id journal reference to prevent duplicate postings.
+- Finance users can open /accounting/reports for a period income statement, trial balance through the selected date, and balance sheet with cumulative earnings.
+- Payment verification feature tests now seed the provisional chart and assert that a posted journal is created.
+
+The bank/payment clearing account is an internal book balance, not a live bank feed. Vendor payables are accrued but no supplier payment workflow currently settles them. Payout transfer references are entered by staff and must be independently reconciled to a bank/provider statement.
