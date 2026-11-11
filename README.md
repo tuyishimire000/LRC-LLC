@@ -106,3 +106,13 @@ Verified rent payments, approved expenses and owner payout fee/transfer events n
 - Payment verification feature tests now seed the provisional chart and assert that a posted journal is created.
 
 The bank/payment clearing account is an internal book balance, not a live bank feed. Vendor payables are accrued but no supplier payment workflow currently settles them. Payout transfer references are entered by staff and must be independently reconciled to a bank/provider statement.
+
+### Supplier payment settlement (in progress)
+
+- Finance staff can record a supplier payment and allocate it across one or more approved property expenses.
+- Empty expense rows are ignored; selected allocation amounts must equal the payment total exactly.
+- Payments remain pending until a different authorized user verifies them.
+- Verification locks the payment and affected expense rows, aggregates allocations per expense, and rejects settlement above each expense's remaining unpaid amount.
+- Verified supplier payments automatically debit vendor payables and credit the internal bank/payment clearing account in a balanced journal.
+- Payment verification and ledger posting are one database transaction; the source reference prevents duplicate journal entries.
+- The workflow records the bank/provider reference but does not send money. Match each reference to an independently obtained bank/provider statement.
