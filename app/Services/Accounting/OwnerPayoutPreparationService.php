@@ -54,6 +54,7 @@ class OwnerPayoutPreparationService
                 ->whereDate('effective_from', '<=', $start->toDateString())
                 ->where(fn ($q) => $q->whereNull('effective_to')->orWhereDate('effective_to', '>=', $end->toDateString()))
                 ->with('owner')
+                ->orderBy('owner_id')
                 ->lockForUpdate()
                 ->get();
 
@@ -86,11 +87,32 @@ class OwnerPayoutPreparationService
                 : (int) round((float) $agreement->fee_value * 100);
 
             $prepared = [];
-            foreach ($ownership as $record) {
+            $allocatedGross = $allocatedFee = $allocatedExpenses = 0;
+            $lastIndex = $ownership->count() - 1;
+            foreach ($ownership->values() as $index => $record) {
                 $percentage = (float) $record->ownership_percentage;
-                $ownerGross = (int) round($grossCents * $percentage / 100);
-                $ownerFee = (int) round($feeCents * $percentage / 100);
-                $ownerExpenses = (int) round($expenseCents * $percentage / 100);
+                // Allocate rounding remainders to the final owner so statement totals reconcile exactly.
+                $ownerGross = $index === $lastIndex ? $grossCents - $allocatedGross : (int) round($grossCents * $percentage / 100);
+                $ownerFee = $index === $lastIndex ? $feeCents - $allocatedFee : (int) round($feeCents * $percentage / 100);
+                $ownerExpenses = $index === $lastIndex ? $expenseCents - $allocatedExpenses : (int) round($expenseCents * $percentage / 100);
+                $allocatedGross += $ownerGross;
+                $allocatedFee += $ownerFee;
+                $allocatedExpenses += $ownerExpenses;
+
+                $overlap = OwnerPayout::query()
+                    ->where('owner_id', $record->owner_id)
+                    ->where('property_id', $property->id)
+                    ->whereDate('period_start', '<=', $end->toDateString())
+                    ->whereDate('period_end', '>=', $start->toDateString())
+                    ->where(function ($query) use ($start, $end) {
+                        $query->whereDate('period_start', '<>', $start->toDateString())
+                            ->orWhereDate('period_end', '<>', $end->toDateString());
+                    })
+                    ->lockForUpdate()
+                    ->exists();
+                if ($overlap) {
+                    throw ValidationException::withMessages(['period' => 'An owner already has a payout statement overlapping this period. Resolve the existing draft or paid statement before preparing another period.']);
+                }
                 $net = $ownerGross - $ownerFee - $ownerExpenses;
 
                 if ($net < 0) {
