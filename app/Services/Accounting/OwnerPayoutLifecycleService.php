@@ -28,7 +28,9 @@ class OwnerPayoutLifecycleService
                 'approved_at' => now(),
                 'approval_note' => $note,
             ]);
-            $fresh = $locked->fresh(['owner', 'property', 'items']);\n            $posting->postFixedManagementFee($fresh);\n            return $fresh;
+            $fresh = $locked->fresh(['owner', 'property', 'items']);
+            $posting->postFixedManagementFee($fresh);
+            return $fresh;
         });
     }
 
@@ -48,7 +50,9 @@ class OwnerPayoutLifecycleService
                 'paid_at' => now(),
                 'payout_reference' => $reference,
             ]);
-            $fresh = $locked->fresh(['owner', 'property', 'items']);\n            $posting->postOwnerTransfer($fresh);\n            return $fresh;
+            $fresh = $locked->fresh(['owner', 'property', 'items']);
+            $posting->postOwnerTransfer($fresh);
+            return $fresh;
         });
     }
 }
