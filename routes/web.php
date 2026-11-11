@@ -3,6 +3,8 @@
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\LeaseController;
 use App\Http\Controllers\RentBillingController;
+use App\Http\Controllers\OwnerPayoutController;
+use App\Http\Controllers\PropertyExpenseController;
 use App\Http\Controllers\TenantController;
 use Illuminate\Support\Facades\Route;
 
