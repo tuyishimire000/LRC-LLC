@@ -50,16 +50,25 @@ class RentBillingController extends Controller
         return redirect()->route('billing.index')->with('success', 'Payment recorded as pending. It does not reduce rent balances until verified and allocated.');
     }
 
+    public function showVerificationForm(RentPayment $payment): View
+    {
+        abort_unless($payment->status === 'pending', 422, 'Only pending payments can be verified.');
+        $charges = RentCharge::query()->with('allocations')->whereHas('lease', fn ($query) => $query->where('tenant_id', $payment->tenant_id))->where('currency', $payment->currency)->where('due_on', '<=', now()->toDateString())->orderBy('due_on')->get()->filter(fn ($charge) => (float) $charge->outstanding_amount > 0);
+        $payment->load('tenant');
+        return view('billing.payment-verify', compact('payment', 'charges'));
+    }
+
     public function verify(Request $request, RentPayment $payment, RentPaymentVerificationService $verification): RedirectResponse
     {
         $data = $request->validate([
             'allocations' => ['required', 'array', 'min:1'],
             'allocations.*.rent_charge_id' => ['required', 'integer', 'distinct', 'exists:rent_charges,id'],
-            'allocations.*.amount' => ['required', 'numeric', 'gt:0', 'decimal:0,2'],
+            'allocations.*.amount' => ['nullable', 'numeric', 'gte:0', 'decimal:0,2'],
             'verification_note' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $verification->verify($payment, $data['allocations'], $request->user(), $data['verification_note'] ?? null);
+        $allocations = array_values(array_filter($data['allocations'], fn ($item) => isset($item['amount']) && (float) $item['amount'] > 0));
+        $verification->verify($payment, $allocations, $request->user(), $data['verification_note'] ?? null);
         return redirect()->route('billing.index')->with('success', 'Payment verified and allocated. Outstanding balances have been recalculated.');
     }
 }
