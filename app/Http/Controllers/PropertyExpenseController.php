@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Property;
 use App\Models\PropertyExpense;
+use App\Services\Accounting\FinancialEventPostingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -65,6 +66,7 @@ class PropertyExpenseController extends Controller
                 'approved_at' => now(),
                 'approval_note' => $approvalData['approval_note'] ?? null,
             ]);
+            $posting->postApprovedOwnerExpense($locked->fresh());
         });
 
         return redirect()->route('accounting.expenses.index')->with('success', 'Expense approved. Owner statements may include it if it is marked owner-borne.');
