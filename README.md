@@ -52,9 +52,9 @@ The existing PHP application and `realestate.sql` are retained as legacy referen
 - Tenant registration, tenant register/profile pages and encrypted national-ID storage.
 - Lease creation, term history, approval and termination workflows.
 - Lease validation prevents cross-property unit assignment and overlapping approved/active occupancy; approval rechecks occupancy while locking the unit row.
-- Security deposits are stored separately from monthly rent and do not create rent income.
+- Security deposits are stored separately from monthly rent and do not create rent income.\n- Monthly rent charges support daily proration, effective-dated rent terms and duplicate-safe generation.\n- Payments remain pending until a second authorized finance user verifies receipt and allocates the full amount to outstanding charges.\n- Partial payments automatically reduce charge balances through allocations; balances are derived, not manually edited.\n- Billing routes are restricted to super administrators and finance managers.
 
-Not implemented yet: tenant self-service portal, document upload UI, recurring rent billing, payment verification, double-entry ledger, owner payouts, provider integrations and production deployment. These remain future milestones.
+Not implemented yet: tenant self-service portal, document upload UI, tenant credits/overpayments/refunds, double-entry general ledger, owner statements and payouts, payment-provider webhooks, bank/MoMo reconciliation and production deployment. These remain future milestones.
 
 The repository has not yet been installed and executed in a PHP environment in this development session. Treat the branch as pending CI and migration validation, not production-ready.
 
