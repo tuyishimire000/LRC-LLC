@@ -30,18 +30,19 @@ class OwnerPayoutPreparationService
         }
 
         return DB::transaction(function () use ($property, $start, $end, $userId) {
-            $agreement = ManagementAgreement::query()
+            $agreements = ManagementAgreement::query()
                 ->where('property_id', $property->id)
                 ->where('status', 'active')
                 ->whereDate('starts_on', '<=', $start->toDateString())
                 ->where(fn ($q) => $q->whereNull('ends_on')->orWhereDate('ends_on', '>=', $end->toDateString()))
                 ->orderByDesc('starts_on')
                 ->lockForUpdate()
-                ->first();
+                ->get();
 
-            if (!$agreement) {
-                throw ValidationException::withMessages(['agreement' => 'No active management agreement covers the complete payout period.']);
+            if ($agreements->count() !== 1) {
+                throw ValidationException::withMessages(['agreement' => 'Exactly one active management agreement must cover the complete payout period. Review overlapping or missing agreements.']);
             }
+            $agreement = $agreements->first();
             if ($agreement->fee_type === 'percentage' && ((float) $agreement->fee_value < 0 || (float) $agreement->fee_value > 100)) {
                 throw ValidationException::withMessages(['agreement' => 'The management fee percentage must be between 0 and 100.']);
             }
@@ -59,6 +60,9 @@ class OwnerPayoutPreparationService
                 ->get();
 
             $share = round($ownership->sum(fn ($record) => (float) $record->ownership_percentage), 2);
+            if ($ownership->pluck('owner_id')->unique()->count() !== $ownership->count()) {
+                throw ValidationException::withMessages(['ownership' => 'An owner has overlapping ownership records for this period. Resolve the ownership history before preparing payouts.']);
+            }
             if ($ownership->isEmpty() || $share !== 100.0) {
                 throw ValidationException::withMessages(['ownership' => 'Ownership shares covering the full payout period must total exactly 100%.']);
             }
