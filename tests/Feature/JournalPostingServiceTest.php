@@ -47,15 +47,15 @@ class JournalPostingServiceTest extends TestCase
             ['ledger_account_id' => $income->id, 'debit' => '0.00', 'credit' => '25000.00'],
         ], $preparer->id);
 
-        $this->expectException(ValidationException::class);
         try {
             $service->post($entry, $preparer);
+            $this->fail('A journal preparer must not post their own entry.');
         } catch (ValidationException $exception) {
             $this->assertSame('draft', $entry->fresh()->status);
-            $posted = $service->post($entry, $poster);
-            $this->assertSame('posted', $posted->status);
-            throw $exception;
         }
+
+        $posted = $service->post($entry, $poster);
+        $this->assertSame('posted', $posted->status);
     }
 
     #[Test]
