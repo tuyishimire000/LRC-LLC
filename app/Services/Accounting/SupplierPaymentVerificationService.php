@@ -25,8 +25,9 @@ class SupplierPaymentVerificationService
             }
 
             $totalCents = 0;
-            foreach ($locked->allocations as $allocation) {
-                $expense = $allocation->expense()->lockForUpdate()->firstOrFail();
+            $expenseAllocations = $locked->allocations->groupBy('property_expense_id')->sortKeys();
+            foreach ($expenseAllocations as $expenseId => $allocations) {
+                $expense = \App\Models\PropertyExpense::query()->whereKey($expenseId)->lockForUpdate()->firstOrFail();
                 if ($expense->status !== 'approved') {
                     throw ValidationException::withMessages(['allocations' => 'Only approved expenses can be settled.']);
                 }
@@ -34,7 +35,7 @@ class SupplierPaymentVerificationService
                     throw ValidationException::withMessages(['allocations' => 'Supplier payment and expense currencies do not match.']);
                 }
 
-                $amountCents = (int) round((float) $allocation->amount * 100);
+                $amountCents = $allocations->sum(fn ($allocation) => (int) round((float) $allocation->amount * 100));
                 if ($amountCents <= 0) {
                     throw ValidationException::withMessages(['allocations' => 'Every settlement allocation must be greater than zero.']);
                 }
