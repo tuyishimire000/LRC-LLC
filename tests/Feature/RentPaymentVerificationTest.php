@@ -4,12 +4,16 @@ namespace Tests\Feature;
 
 use App\Models\Lease;
 use App\Models\Property;
+use App\Models\Owner;
+use App\Models\PropertyOwner;
+use App\Models\ManagementAgreement;
 use App\Models\PropertyUnit;
 use App\Models\RentCharge;
 use App\Models\RentPayment;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Billing\RentPaymentVerificationService;
+use App\Services\Accounting\FinancialEventPostingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\Test;
@@ -28,6 +32,10 @@ class RentPaymentVerificationTest extends TestCase
             'country' => 'RW',
             'status' => 'active',
         ]);
+        $owner = Owner::create(['owner_code' => 'BILL-OWNER', 'owner_type' => 'individual', 'legal_name' => 'Billing owner', 'status' => 'active']);
+        PropertyOwner::create(['property_id' => $property->id, 'owner_id' => $owner->id, 'ownership_percentage' => '100.00', 'effective_from' => '2026-01-01']);
+        ManagementAgreement::create(['agreement_number' => 'BILL-AGREEMENT', 'property_id' => $property->id, 'starts_on' => '2026-01-01', 'fee_type' => 'percentage', 'fee_value' => '10.00', 'payout_frequency' => 'monthly', 'status' => 'active']);
+        $this->artisan('lrc:accounting-seed');
         $unit = PropertyUnit::create([
             'property_id' => $property->id,
             'unit_code' => 'B-01',
@@ -99,7 +107,8 @@ class RentPaymentVerificationTest extends TestCase
         app(RentPaymentVerificationService::class)->verify(
             $fixture['payment'],
             [['rent_charge_id' => $fixture['charge']->id, 'amount' => '40000.00']],
-            $fixture['verifier']
+            $fixture['verifier'],
+            app(FinancialEventPostingService::class)
         );
 
         $fixture['charge']->refresh();
@@ -109,6 +118,7 @@ class RentPaymentVerificationTest extends TestCase
         $this->assertSame('40000.00', $fixture['charge']->allocated_amount);
         $this->assertSame('60000.00', $fixture['charge']->outstanding_amount);
         $this->assertSame('partial', $fixture['charge']->payment_status);
+        $this->assertDatabaseHas('journal_entries', ['source_type' => 'rent_payment', 'source_id' => $fixture['payment']->id, 'status' => 'posted']);
     }
 
     #[Test]
