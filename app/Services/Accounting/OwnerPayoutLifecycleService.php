@@ -9,9 +9,9 @@ use Illuminate\Validation\ValidationException;
 
 class OwnerPayoutLifecycleService
 {
-    public function approve(OwnerPayout $payout, User $approver, ?string $note = null): OwnerPayout
+    public function approve(OwnerPayout $payout, User $approver, FinancialEventPostingService $posting, ?string $note = null): OwnerPayout
     {
-        return DB::transaction(function () use ($payout, $approver, $note) {
+        return DB::transaction(function () use ($payout, $approver, $posting, $note) {
             $locked = OwnerPayout::query()->whereKey($payout->id)->lockForUpdate()->firstOrFail();
             if ($locked->status !== 'draft') {
                 throw ValidationException::withMessages(['payout' => 'Only draft payouts can be approved.']);
@@ -28,13 +28,13 @@ class OwnerPayoutLifecycleService
                 'approved_at' => now(),
                 'approval_note' => $note,
             ]);
-            return $locked->fresh(['owner', 'property', 'items']);
+            $fresh = $locked->fresh(['owner', 'property', 'items']);\n            $posting->postFixedManagementFee($fresh);\n            return $fresh;
         });
     }
 
-    public function recordTransfer(OwnerPayout $payout, User $operator, string $reference): OwnerPayout
+    public function recordTransfer(OwnerPayout $payout, User $operator, FinancialEventPostingService $posting, string $reference): OwnerPayout
     {
-        return DB::transaction(function () use ($payout, $operator, $reference) {
+        return DB::transaction(function () use ($payout, $operator, $posting, $reference) {
             $locked = OwnerPayout::query()->whereKey($payout->id)->lockForUpdate()->firstOrFail();
             if ($locked->status !== 'approved') {
                 throw ValidationException::withMessages(['payout' => 'Only approved payouts can be marked as transferred.']);
@@ -48,7 +48,7 @@ class OwnerPayoutLifecycleService
                 'paid_at' => now(),
                 'payout_reference' => $reference,
             ]);
-            return $locked->fresh(['owner', 'property', 'items']);
+            $fresh = $locked->fresh(['owner', 'property', 'items']);\n            $posting->postOwnerTransfer($fresh);\n            return $fresh;
         });
     }
 }
