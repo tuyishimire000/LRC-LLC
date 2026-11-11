@@ -35,7 +35,9 @@ class RentCharge extends Model
     {
         $outstanding = (float) $this->outstanding_amount;
         if ($outstanding <= 0) return 'paid';
-        if ((float) $this->allocated_amount > 0) return 'partial';
-        return $this->due_on->copy()->endOfDay()->isPast() ? 'overdue' : 'unpaid';
+        $hasAllocation = (float) $this->allocated_amount > 0;
+        $isOverdue = $this->due_on->copy()->endOfDay()->isPast();
+        if ($isOverdue) return $hasAllocation ? 'partial_overdue' : 'overdue';
+        return $hasAllocation ? 'partial' : 'unpaid';
     }
 }
