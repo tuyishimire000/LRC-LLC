@@ -13,9 +13,9 @@ A web-based property management platform for Rwanda. The platform supports LRC-o
 
 ## Local setup
 
-1. Install PHP 8.2+, Composer and MySQL 8.
-2. Create a database and a least-privilege database user.
-3. Copy `.env.example` to `.env` and set database credentials.
+1. Install PHP 8.2+, Composer and Docker with the Compose plugin (or install MySQL 8 directly).
+2. Copy `.env.example` to `.env` and set a strong `DB_PASSWORD` for the `lrc_app` database user. If using Docker, also set a strong `MYSQL_ROOT_PASSWORD`.
+3. Start MySQL with `docker compose up -d mysql`. Wait until the MySQL health check reports healthy. The named volume `lrc_mysql_data` keeps database data between restarts.
 4. Run `composer install`.
 5. Run `php artisan key:generate`.
 6. Run `php artisan migrate`.
@@ -25,7 +25,7 @@ A web-based property management platform for Rwanda. The platform supports LRC-o
 10. Run `php artisan serve`.
 
 
-For automated checks, run `php artisan test`. The GitHub Actions workflow runs Composer validation and the test suite on pushes and pull requests.
+For automated checks, run `php artisan test`. Tests are configured to use a dedicated MySQL database named `lrc_testing`; they do not use SQLite or your development database. Ensure this test database exists and the test credentials in `phpunit.xml` match your local MySQL setup. GitHub Actions starts an isolated MySQL 8 service and runs the test suite against it.
 
 Do not use the MySQL root account from the application. Never commit `.env` or provider credentials.
 
